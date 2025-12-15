@@ -1,0 +1,72 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Backend",
+            "type": "shell",
+            "command": "npm run dev",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "Server running on port"
+                }
+            },
+            "presentation": {
+                "group": "run",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Start Frontend",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/app"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "VITE",
+                    "endsPattern": "Local:"
+                }
+            },
+            "presentation": {
+                "group": "run",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Run Full Stack",
+            "dependsOn": [
+                "Start Backend",
+                "Start Frontend"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                }
+            }
+        }
+    ]
+}
