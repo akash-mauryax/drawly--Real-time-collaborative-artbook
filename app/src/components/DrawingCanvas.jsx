@@ -13,7 +13,9 @@ const DrawingCanvas = () => {
   const [brushSize, setBrushSize] = useState(5);
   const [tool, setTool] = useState('freeDrawing');
   const serverUrl = import.meta.env.VITE_SERVER_URL
-    || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://drawly-1.onrender.com');
+    || (window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : 'https://drawly-real-time-collaborative-artbook.onrender.com');
   const socket = useRef(io(serverUrl)).current;
   const [shareLink, setShareLink] = useState('');
   const [userId] = useState(uuidv4());
