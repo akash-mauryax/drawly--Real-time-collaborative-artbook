@@ -37,7 +37,7 @@ const App = () => {
       path:'/draw/:roomId',
       element:<DrawingCanvas/>
     }
-  ], { basename: import.meta.env.BASE_URL })
+  ], { basename: basePath })
   return (
     <>
         <RouterProvider router={router}/>
