@@ -7,11 +7,12 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   const[roomId,setRoomId]=useState('');
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   const createRoom=() =>{
     const newRoomId=Math.random().toString(36).substring(2,15);
     setRoomId(newRoomId)
-    window.location.href=`/draw/${newRoomId}`;
+    window.location.href=`${basePath}/draw/${newRoomId}`;
   }
   const router=createBrowserRouter([
     {
@@ -36,7 +37,7 @@ const App = () => {
       path:'/draw/:roomId',
       element:<DrawingCanvas/>
     }
-  ])
+  ], { basename: import.meta.env.BASE_URL })
   return (
     <>
         <RouterProvider router={router}/>
