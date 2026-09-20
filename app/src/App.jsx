@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import {createBrowserRouter,RouterProvider} from 'react-router-dom'
+import {createHashRouter,RouterProvider} from 'react-router-dom'
 import DrawingCanvas from './components/DrawingCanvas'
 import './App.css'
 import { ToastContainer } from 'react-toastify';
@@ -12,9 +12,9 @@ const App = () => {
   const createRoom=() =>{
     const newRoomId=Math.random().toString(36).substring(2,15);
     setRoomId(newRoomId)
-    window.location.href=`${basePath}/draw/${newRoomId}`;
+    window.location.href=`${basePath}/#/draw/${newRoomId}`;
   }
-  const router=createBrowserRouter([
+  const router=createHashRouter([
     {
       path:'/',
       element:(
@@ -37,7 +37,7 @@ const App = () => {
       path:'/draw/:roomId',
       element:<DrawingCanvas/>
     }
-  ], { basename: basePath })
+  ])
   return (
     <>
         <RouterProvider router={router}/>

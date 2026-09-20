@@ -341,7 +341,7 @@ const DrawingCanvas = () => {
   }
   useEffect(() => {
     const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-    setShareLink(`${window.location.origin}${basePath}/draw/${roomId}`)
+    setShareLink(`${window.location.origin}${basePath}/#/draw/${roomId}`)
   }, [roomId])
   return (
     <div className='container'>
