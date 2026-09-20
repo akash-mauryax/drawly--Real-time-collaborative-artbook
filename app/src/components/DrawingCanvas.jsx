@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import io from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
@@ -12,9 +12,15 @@ const DrawingCanvas = () => {
   const [color, setColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(5);
   const [tool, setTool] = useState('freeDrawing');
-  const socket = useRef(io(import.meta.env.VITE_SERVER_URL || 'https://drawly-1.onrender.com')).current;
+  const serverUrl = import.meta.env.VITE_SERVER_URL
+    || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://drawly-1.onrender.com');
+  const socket = useRef(io(serverUrl)).current;
   const [shareLink, setShareLink] = useState('');
-  const [userId, setUserId] = useState(uuidv4());
+  const [userId] = useState(uuidv4());
+  const [userName, setUserName] = useState('guest1');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatMessagesRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -140,16 +146,39 @@ const DrawingCanvas = () => {
         setTool(value)
       }
     })
+    socket.on('chatHistory', (messages) => {
+      setChatMessages(messages);
+    })
+    socket.on('assignedUserName', (assignedName) => {
+      setUserName(assignedName);
+    })
+    socket.on('chatMessage', (message) => {
+      setChatMessages((messages) => [...messages, message].slice(-100));
+    })
+    socket.on('chatCleared', () => {
+      setChatMessages([]);
+    })
     return () => {
       socket.off('draw')
       socket.off('initialData')
       socket.off('clearCanvas')
       socket.off('toolChange')
+      socket.off('chatHistory')
+      socket.off('assignedUserName')
+      socket.off('chatMessage')
+      socket.off('chatCleared')
     }
 
 
 
-  }, [])
+  }, [roomId, socket, userId])
+
+  useEffect(() => {
+    chatMessagesRef.current?.scrollTo({
+      top: chatMessagesRef.current.scrollHeight,
+      behavior: 'smooth'
+    });
+  }, [chatMessages])
 
   const startDrawing = ({ nativeEvent }) => {
     const { offsetX, offsetY } = nativeEvent;
@@ -276,10 +305,6 @@ const DrawingCanvas = () => {
     }
     socket.emit('toolChange', { roomId, tool, value })
   }
-  const generateShareLink = () => {
-    const link = `${window.location.origin}/draw/${roomId}`;
-    setShareLink(link)
-  }
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareLink)
       .then(() => {
@@ -295,19 +320,85 @@ const DrawingCanvas = () => {
         });
       });
   }
+  const sendChatMessage = (event) => {
+    event.preventDefault();
+    const message = chatInput.trim();
+    if (!message) return;
+
+    socket.emit('sendChatMessage', {
+      roomId,
+      userId,
+      message
+    });
+    setChatInput('');
+  }
+  const clearChat = () => {
+    if (chatMessages.length === 0 || !window.confirm('Clear this chat for everyone in the room?')) {
+      return;
+    }
+
+    socket.emit('clearChat', roomId);
+  }
   useEffect(() => {
-    generateShareLink()
+    setShareLink(`${window.location.origin}/draw/${roomId}`)
   }, [roomId])
   return (
     <div className='container'>
-      <canvas
-        className='canvas'
-        onMouseDown={startDrawing}
-        onMouseUp={finishDrawing}
-        onMouseMove={draw}
-        onMouseLeave={finishDrawing}
-        ref={canvasRef}
-      />
+      <div className='workspace'>
+        <canvas
+          className='canvas'
+          onMouseDown={startDrawing}
+          onMouseUp={finishDrawing}
+          onMouseMove={draw}
+          onMouseLeave={finishDrawing}
+          ref={canvasRef}
+        />
+        <aside className='chat-panel' aria-label="Room chat">
+          <div className='chat-header'>
+            <div>
+              <h2>Room chat</h2>
+              <p>Chat with the people in this drawing room · You are {userName}</p>
+            </div>
+            <div className='chat-header-actions'>
+              <span className='chat-room-id'>#{roomId?.slice(0, 6)}</span>
+              <button className='clear-chat-button' type="button" onClick={clearChat} disabled={chatMessages.length === 0}>
+                Clear chat
+              </button>
+            </div>
+          </div>
+          <div className='chat-messages' ref={chatMessagesRef} aria-live="polite">
+            {chatMessages.length === 0 ? (
+              <p className='chat-empty'>No messages yet. Say hello!</p>
+            ) : (
+              chatMessages.map((chatMessage) => (
+                <div
+                  className={`chat-message ${chatMessage.userId === userId ? 'chat-message-own' : ''}`}
+                  key={chatMessage.id}
+                >
+                  <div className='chat-message-meta'>
+                    <strong>{chatMessage.userId === userId ? 'You' : chatMessage.userName}</strong>
+                    <span>{new Date(chatMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <p>{chatMessage.message}</p>
+                </div>
+              ))
+            )}
+          </div>
+          <form className='chat-form' onSubmit={sendChatMessage}>
+            <label className='sr-only' htmlFor="chat-message">Message</label>
+            <input
+              id="chat-message"
+              type="text"
+              value={chatInput}
+              maxLength={500}
+              onChange={(event) => setChatInput(event.target.value)}
+              placeholder="Write a message..."
+              autoComplete="off"
+            />
+            <button type="submit" disabled={!chatInput.trim()}>Send</button>
+          </form>
+        </aside>
+      </div>
       <div className='controls'>
         <label htmlFor="color">Color:</label>
         <input

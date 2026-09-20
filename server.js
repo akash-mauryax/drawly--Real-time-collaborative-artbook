@@ -15,6 +15,8 @@ const io = new Server(httpServer, {
 });
 
 const rooms = {};
+const chatMessages = {};
+const nextGuestNumbers = {};
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -26,8 +28,20 @@ io.on('connection', (socket) => {
         if (!rooms[roomId]) {
             rooms[roomId] = [];
         }
+        if (!chatMessages[roomId]) {
+            chatMessages[roomId] = [];
+        }
+        if (!nextGuestNumbers[roomId]) {
+            nextGuestNumbers[roomId] = 1;
+        }
+
+        const userName = `guest${nextGuestNumbers[roomId]}`;
+        nextGuestNumbers[roomId] += 1;
+        socket.data.userName = userName;
 
         socket.emit('initialData', rooms[roomId]);
+        socket.emit('chatHistory', chatMessages[roomId]);
+        socket.emit('assignedUserName', userName);
     });
 
     socket.on('draw', (data) => {
@@ -56,6 +70,38 @@ io.on('connection', (socket) => {
 
     socket.on('toolChange', ({ roomId, tool, value }) => {
         socket.to(roomId).emit('toolChange', { tool, value });
+    });
+
+    socket.on('sendChatMessage', ({ roomId, userId, message }) => {
+        const trimmedMessage = typeof message === 'string' ? message.trim() : '';
+        if (!roomId || !trimmedMessage || trimmedMessage.length > 500) {
+            return;
+        }
+
+        if (!chatMessages[roomId]) {
+            chatMessages[roomId] = [];
+        }
+
+        const chatMessage = {
+            id: `${socket.id}-${Date.now()}`,
+            userId,
+            userName: socket.data.userName || 'guest',
+            message: trimmedMessage,
+            timestamp: Date.now()
+        };
+
+        chatMessages[roomId].push(chatMessage);
+        chatMessages[roomId] = chatMessages[roomId].slice(-100);
+        io.to(roomId).emit('chatMessage', chatMessage);
+    });
+
+    socket.on('clearChat', (roomId) => {
+        if (!roomId) {
+            return;
+        }
+
+        chatMessages[roomId] = [];
+        io.to(roomId).emit('chatCleared');
     });
 
     socket.on('disconnect', () => {

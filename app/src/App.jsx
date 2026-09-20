@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {createBrowserRouter,RouterProvider} from 'react-router-dom'
 import DrawingCanvas from './components/DrawingCanvas'
 import './App.css'
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
