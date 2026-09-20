@@ -5,6 +5,7 @@
         "dev:client": "cd app && npm run dev",
         "build": "cd app && npm install && npm run build:client",
         "build:client": "vite build",
+        "deploy": "cd app && npm run deploy",
         "start": "node server.js"
     },
     "dependencies": {
